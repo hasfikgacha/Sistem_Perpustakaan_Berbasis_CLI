@@ -14,6 +14,13 @@
 #define MAX_META_LEN 64
 #define MAX_URL_LEN 256
 
+#define MASTER_BOOK_FILE "Books.txt"
+#define DB_BOOK_FILE     "books_db.txt"
+#define DB_USER_FILE     "user.txt"
+#define DB_LOAN_FILE     "peminjaman.txt"
+
+#define DEFAULT_STOCK 5
+
 // Struktur data untuk setiap buku di dalam source file "Books.txt"
 typedef struct {
     char ocaid[MAX_ID_LEN];

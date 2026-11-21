@@ -80,3 +80,75 @@ void admin_create_book(Book catalog[], int *book_count, int max_capacity) {
     /* save_books_to_db(catalog, *book_count); */
     printf("Buku berhasil ditambahkan.\n");
 }
+
+void admin_update_book(Book catalog[], int book_count) {
+    char ocaid_cari[MAX_ID_LEN];
+    printf("Masukkan ID buku yang ingin diubah: ");
+    read_line(ocaid_cari, MAX_ID_LEN);
+
+    int idx = find_book_index_by_id(catalog, book_count, ocaid_cari);
+    if (idx == -1) {
+        printf("Buku dengan ID tersebut tidak ditemukan.\n");
+        return;
+    }
+
+    printf("\nBuku: %s\n", catalog[idx].title);
+    printf("1. Ubah judul\n");
+    printf("2. Ubah pengarang\n");
+    printf("3. Ubah tahun terbit\n");
+    printf("4. Ubah jumlah halaman\n");
+    printf("5. Tambah/kurangi stok\n");
+    printf("0. Batal\n");
+    printf("Pilihan: ");
+    int pilihan = read_int();
+
+    switch (pilihan) {
+        case 1:
+            printf("Judul baru: ");
+            read_line(catalog[idx].title, MAX_TITLE_LEN);
+            break;
+        case 2:
+            printf("Pengarang baru: ");
+            read_line(catalog[idx].author, MAX_AUTHOR_LEN);
+            break;
+        case 3: {
+            printf("Tahun baru: ");
+            int tahun_baru = read_int();
+            if (tahun_baru <= 0) {
+                printf("Tahun tidak valid.\n");
+                return;
+            }
+            catalog[idx].year = tahun_baru;
+            break;
+        }
+        case 4: {
+            printf("Jumlah halaman baru: ");
+            int halaman_baru = read_int();
+            if (halaman_baru <= 0) {
+                printf("Jumlah halaman tidak valid.\n");
+                return;
+            }
+            catalog[idx].page_count = halaman_baru;
+            break;
+        }
+        case 5: {
+            printf("Perubahan stok (positif menambah, negatif mengurangi): ");
+            int perubahan = read_int();
+            if (catalog[idx].stock + perubahan < 0) {
+                printf("Stok tidak boleh kurang dari 0.\n");
+                return;
+            }
+            catalog[idx].stock += perubahan;
+            break;
+        }
+        case 0:
+            printf("Perubahan dibatalkan.\n");
+            return;
+        default:
+            printf("Pilihan tidak valid.\n");
+            return;
+    }
+
+    /* save_books_to_db(catalog, book_count); */
+    printf("Data buku berhasil diperbarui.\n");
+}

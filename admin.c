@@ -152,3 +152,39 @@ void admin_update_book(Book catalog[], int book_count) {
     /* save_books_to_db(catalog, book_count); */
     printf("Data buku berhasil diperbarui.\n");
 }
+
+void admin_delete_book(Book catalog[], int *book_count, const Loan loans[], int loan_count) {
+    char ocaid_hapus[MAX_ID_LEN];
+    printf("Masukkan ID buku yang ingin dihapus: ");
+    read_line(ocaid_hapus, MAX_ID_LEN);
+
+    int idx = find_book_index_by_id(catalog, *book_count, ocaid_hapus);
+    if (idx == -1) {
+        printf("Buku dengan ID tersebut tidak ditemukan.\n");
+        return;
+    }
+
+    for (int i = 0; i < loan_count; i++) {
+        if (strcmp(loans[i].ocaid, ocaid_hapus) == 0 &&
+            strcmp(loans[i].status, "DIPINJAM") == 0) {
+            printf("Buku sedang dipinjam, tidak bisa dihapus.\n");
+            return;
+        }
+    }
+
+    char jawaban[8];
+    printf("Yakin hapus \"%s\"? (y/n): ", catalog[idx].title);
+    read_line(jawaban, sizeof(jawaban));
+    if (jawaban[0] != 'y' && jawaban[0] != 'Y') {
+        printf("Penghapusan dibatalkan.\n");
+        return;
+    }
+
+    for (int i = idx; i < *book_count - 1; i++) {
+        catalog[i] = catalog[i + 1];
+    }
+    (*book_count)--;
+
+    /* save_books_to_db(catalog, *book_count); */
+    printf("Buku berhasil dihapus.\n");
+}

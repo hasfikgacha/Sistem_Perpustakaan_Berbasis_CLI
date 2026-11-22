@@ -201,3 +201,46 @@ int save_users(const User users[], int user_count) {
     fclose(fp);
     return 1;
 }
+
+/* Membaca peminjaman.txt */
+int load_loans(Loan loans[], int max_capacity) {
+    FILE *fp = fopen(DB_LOAN_FILE, "r");
+    int count = 0;
+
+    if (!fp) {
+        /* Buat berkas kosong jika belum ada */
+        fp = fopen(DB_LOAN_FILE, "w");
+        if (fp) fclose(fp);
+        return 0;
+    }
+
+    while (count < max_capacity &&
+           fscanf(fp, "%u %31s %63s %19s %19s",
+                  &loans[count].id_peminjaman,
+                  loans[count].username,
+                  loans[count].ocaid,
+                  loans[count].tanggal_pinjam,
+                  loans[count].status) == 5) {
+        count++;
+    }
+
+    fclose(fp);
+    return count;
+}
+
+int save_loans(const Loan loans[], int loan_count) {
+    FILE *fp = fopen(DB_LOAN_FILE, "w");
+    int i;
+    if (!fp) return 0;
+
+    for (i = 0; i < loan_count; i++) {
+        fprintf(fp, "%u %s %s %s %s\n",
+                loans[i].id_peminjaman,
+                loans[i].username,
+                loans[i].ocaid,
+                loans[i].tanggal_pinjam,
+                loans[i].status);
+    }
+    fclose(fp);
+    return 1;
+}

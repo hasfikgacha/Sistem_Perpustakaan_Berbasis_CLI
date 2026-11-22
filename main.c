@@ -31,12 +31,19 @@ int main(int argc, char *argv[]) {
     /* 2. Cek apakah pengguna melakukan login langsung melalui Command Line Arguments (CLA) */
     if (argc > 1) {
         cla_logged_in = login_via_cla(argc, argv, users, user_count, &current_user);
+        if (cla_logged_in == 0) {
+            printf("[!] Login via CLA gagal (username/password salah).\n");
+            press_enter_to_continue();
+        } else if (cla_logged_in == -1) {
+            printf("[!] Format argumen salah. Gunakan: %s -u <username> -p <password>\n", argv[0]);
+            press_enter_to_continue();
+        }
     }
 
     /* 3. Loop utama navigasi berdasarkan Role */
     while (1) {
-        if (!cla_logged_in) {
-            /* FIX 1: Sesuaikan menjadi 3 argumen (tanpa &user_count dan MAX_USERS) */
+        /* Cek == 1 secara eksplisit agar return -1 tidak melewati login */
+        if (cla_logged_in != 1) {
             if (!interactive_auth_menu(users, user_count, &current_user)) {
                 printf("\nTerima kasih telah menggunakan Sistem Manajemen Perpustakaan!\n");
                 break;
@@ -44,9 +51,8 @@ int main(int argc, char *argv[]) {
         }
 
         if (strcmp(current_user.role, "admin") == 0) {
-            run_admin_session(&current_user, catalog, &book_count, loans, &loan_count);
+            run_admin_session(catalog, &book_count, MAX_BOOKS, loans, loan_count);
         } else {
-            /* FIX 2: Kirim book_count by-value (tanpa &) dan tambahkan MAX_LOANS */
             run_user_session(&current_user, catalog, book_count, loans, &loan_count, MAX_LOANS);
         }
 

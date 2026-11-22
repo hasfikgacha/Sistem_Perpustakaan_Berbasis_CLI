@@ -19,13 +19,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
+#include "file_io.h"
 #include "models.h"
 #include "user.h"
 
-/* Fungsi penyimpanan milik Anggota 1 (file_io.c).  */
-extern void save_books(const Book catalog[], int book_count);
-extern void save_loans(const Loan loans[], int loan_count);
 
 /* ---------- Konstanta ---------- */
 
@@ -480,7 +477,7 @@ void user_borrow_book(Book catalog[], int book_count, Loan loans[],
     loans[*loan_count] = new_loan;
     (*loan_count)++;
 
-    save_books(catalog, book_count);
+    save_books_to_db(catalog, book_count);
     save_loans(loans, *loan_count);
 
     printf("[OK] Berhasil meminjam \"%s\".\n", catalog[index].title);
@@ -615,7 +612,7 @@ void user_return_book(Book catalog[], int book_count, Loan loans[],
         catalog[book_index].stock++;
     }
 
-    save_books(catalog, book_count);
+    save_books_to_db(catalog, book_count);
     save_loans(loans, loan_count);
 
     if (book_index >= 0) {

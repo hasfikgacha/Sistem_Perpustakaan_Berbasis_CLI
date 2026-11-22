@@ -188,3 +188,26 @@ void admin_delete_book(Book catalog[], int *book_count, const Loan loans[], int 
     /* save_books_to_db(catalog, *book_count); */
     printf("Buku berhasil dihapus.\n");
 }
+
+void admin_view_all_loans(const Loan loans[], int loan_count, const Book catalog[], int book_count) {
+    if (loan_count == 0) {
+        printf("Belum ada riwayat peminjaman.\n");
+        return;
+    }
+
+    printf("\n%-5s %-15s %-40s %-12s %-10s\n",
+           "ID", "Peminjam", "Judul Buku", "Tanggal", "Status");
+    printf("--------------------------------------------------------------------------------------\n");
+
+    for (int i = 0; i < loan_count; i++) {
+        const char *judul = "(buku sudah dihapus)";
+        int idx = find_book_index_by_id(catalog, book_count, loans[i].ocaid);
+        if (idx != -1) {
+            judul = catalog[idx].title;
+        }
+
+        printf("%-5u %-15s %-40.40s %-12s %-10s\n",
+               loans[i].id_peminjaman, loans[i].username, judul,
+               loans[i].tanggal_pinjam, loans[i].status);
+    }
+}

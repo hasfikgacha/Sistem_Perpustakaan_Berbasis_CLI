@@ -36,7 +36,8 @@ int main(int argc, char *argv[]) {
     /* 3. Loop utama navigasi berdasarkan Role */
     while (1) {
         if (!cla_logged_in) {
-            if (!interactive_auth_menu(users, &user_count, MAX_USERS, &current_user)) {
+            /* FIX 1: Sesuaikan menjadi 3 argumen (tanpa &user_count dan MAX_USERS) */
+            if (!interactive_auth_menu(users, user_count, &current_user)) {
                 printf("\nTerima kasih telah menggunakan Sistem Manajemen Perpustakaan!\n");
                 break;
             }
@@ -45,7 +46,8 @@ int main(int argc, char *argv[]) {
         if (strcmp(current_user.role, "admin") == 0) {
             run_admin_session(&current_user, catalog, &book_count, loans, &loan_count);
         } else {
-            run_user_session(&current_user, catalog, &book_count, loans, &loan_count);
+            /* FIX 2: Kirim book_count by-value (tanpa &) dan tambahkan MAX_LOANS */
+            run_user_session(&current_user, catalog, book_count, loans, &loan_count, MAX_LOANS);
         }
 
         /* Setelah logout dari sesi CLA, kembalikan ke gerbang login interaktif */

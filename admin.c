@@ -211,3 +211,43 @@ void admin_view_all_loans(const Loan loans[], int loan_count, const Book catalog
                loans[i].tanggal_pinjam, loans[i].status);
     }
 }
+
+void run_admin_session(Book catalog[], int *book_count, int max_capacity, Loan loans[], int loan_count) {
+    int pilihan = 0;
+
+    while (pilihan != 6) {
+        printf("\n===== MENU ADMIN =====\n");
+        printf("1. Lihat katalog buku\n");
+        printf("2. Tambah buku\n");
+        printf("3. Ubah data buku\n");
+        printf("4. Hapus buku\n");
+        printf("5. Lihat riwayat peminjaman\n");
+        printf("6. Keluar\n");
+        printf("Pilihan: ");
+        pilihan = read_int();
+
+        switch (pilihan) {
+            case 1:
+                /* TODO: panggil interactive_sort_and_view_catalog dari sort.h (Anggota 4) */
+                printf("Fitur lihat katalog menunggu modul sorting.\n");
+                break;
+            case 2:
+                admin_create_book(catalog, book_count, max_capacity);
+                break;
+            case 3:
+                admin_update_book(catalog, *book_count);
+                break;
+            case 4:
+                admin_delete_book(catalog, book_count, loans, loan_count);
+                break;
+            case 5:
+                admin_view_all_loans(loans, loan_count, catalog, *book_count);
+                break;
+            case 6:
+                printf("Keluar dari menu admin.\n");
+                break;
+            default:
+                printf("Pilihan tidak valid.\n");
+        }
+    }
+}

@@ -1,14 +1,39 @@
+/*
+ * user.c
+ * Modul Sirkulasi Anggota (User) - Sistem Manajemen Perpustakaan CLI.
+ *
+ * Tanggung jawab modul ini:
+ *   - menampilkan katalog buku yang tersedia untuk dipinjam,
+ *   - mencari buku berdasarkan ID (ocaid), judul, atau pengarang,
+ *   - meminjam dan mengembalikan buku,
+ *   - menampilkan daftar peminjaman pribadi,
+ *   - menjalankan menu interaktif khusus User.
+ *
+ * Data disimpan dalam array of struct milik main.c. Modul ini hanya
+ * membaca/mengubah array tersebut, lalu memanggil save_books() dan
+ * save_loans() (file_io.c) agar berkas .txt langsung tersinkronisasi.
+ */
+
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "models.h"
 #include "user.h"
+
+/* Fungsi penyimpanan milik Anggota 1 (file_io.c).  */
+extern void save_books(const Book catalog[], int book_count);
+extern void save_loans(const Loan loans[], int loan_count);
 
 /* ---------- Konstanta ---------- */
 
 #define INPUT_SIZE 150 /* ukuran buffer untuk membaca satu baris input */
 #define PAGE_SIZE 20   /* jumlah baris per halaman saat menampilkan tabel */
+
+#define STATUS_BORROWED "DIPINJAM"
+#define STATUS_RETURNED "KEMBALI"
 
 /* Lebar kolom tabel buku: satu-satunya sumber kebenaran format tabel. */
 #define W_ID 18
@@ -192,6 +217,78 @@ static int ask_continue(int shown)
     return !(answer[0] == 'q' || answer[0] == 'Q');
 }
 
+/* ---------- Helper: peminjaman ---------- */
+
+/* Menyalin string dengan batas ukuran; hasil selalu diakhiri '\0'. */
+static void copy_string(char *dst, size_t size, const char *src)
+{
+    if (size == 0) {
+        return;
+    }
+    strncpy(dst, src, size - 1);
+    dst[size - 1] = '\0';
+}
+
+/* Mengisi 'buffer' dengan tanggal hari ini berformat DD-MM-YYYY. */
+static void get_current_date_str(char *buffer, size_t size)
+{
+    time_t now = time(NULL);
+    struct tm *local = localtime(&now);
+
+    if (local == NULL || strftime(buffer, size, "%d-%m-%Y", local) == 0) {
+        copy_string(buffer, size, "00-00-0000");
+    }
+}
+
+/* Mencari indeks buku berdasarkan ocaid. Mengembalikan -1 jika tidak ada. */
+static int find_book_index(const Book catalog[], int book_count,
+                           const char *ocaid)
+{
+    int i;
+
+    for (i = 0; i < book_count; i++) {
+        if (equals_ci(catalog[i].ocaid, ocaid)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static int loan_is_borrowed(const Loan *loan)
+{
+    return strcmp(loan->status, STATUS_BORROWED) == 0;
+}
+
+/* Apakah 'username' masih meminjam buku 'ocaid' (status DIPINJAM)? */
+static int has_active_loan(const Loan loans[], int loan_count,
+                           const char *username, const char *ocaid)
+{
+    int i;
+
+    for (i = 0; i < loan_count; i++) {
+        if (strcmp(loans[i].username, username) == 0 &&
+            equals_ci(loans[i].ocaid, ocaid) &&
+            loan_is_borrowed(&loans[i])) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* ID transaksi berikutnya = ID terbesar yang ada + 1. */
+static unsigned int next_loan_id(const Loan loans[], int loan_count)
+{
+    unsigned int max_id = 0;
+    int i;
+
+    for (i = 0; i < loan_count; i++) {
+        if (loans[i].id_peminjaman > max_id) {
+            max_id = loans[i].id_peminjaman;
+        }
+    }
+    return max_id + 1;
+}
+
 /* ---------- Fitur: katalog & pencarian ---------- */
 
 void user_view_available_books(const Book catalog[], int book_count)
@@ -280,4 +377,80 @@ void user_search_books(const Book catalog[], int book_count)
         printf("\nDitemukan %d buku.\n", found);
     }
     print_line('-', BOOK_LINE_WIDTH);
+}
+
+/* ---------- Fitur: peminjaman ---------- */
+
+void user_borrow_book(Book catalog[], int book_count, Loan loans[],
+                      int *loan_count, int loan_capacity,
+                      const User *current_user)
+{
+    char ocaid[INPUT_SIZE];
+    Loan new_loan;
+    int index;
+
+    if (catalog == NULL || loans == NULL || loan_count == NULL ||
+        current_user == NULL) {
+        printf("[!] Data internal tidak valid.\n");
+        return;
+    }
+
+    printf("\n--- PINJAM BUKU ---\n");
+
+    if (*loan_count >= loan_capacity) {
+        printf("[!] Kapasitas data peminjaman penuh. Hubungi pustakawan.\n");
+        return;
+    }
+
+    if (read_line("Masukkan ID Buku (OCAID) yang ingin dipinjam "
+                  "(kosongkan untuk batal): ",
+                  ocaid, sizeof(ocaid)) == INPUT_EOF) {
+        return;
+    }
+    if (ocaid[0] == '\0') {
+        printf("Peminjaman dibatalkan.\n");
+        return;
+    }
+
+    index = find_book_index(catalog, book_count, ocaid);
+    if (index < 0) {
+        printf("[!] Buku dengan ID \"%s\" tidak ditemukan.\n", ocaid);
+        return;
+    }
+
+    if (catalog[index].stock <= 0) {
+        printf("[!] Maaf, stok buku \"%s\" sedang habis.\n",
+               catalog[index].title);
+        return;
+    }
+
+    if (has_active_loan(loans, *loan_count, current_user->username,
+                        catalog[index].ocaid)) {
+        printf("[!] Anda masih meminjam buku \"%s\". "
+               "Kembalikan dulu sebelum meminjam lagi.\n",
+               catalog[index].title);
+        return;
+    }
+
+    memset(&new_loan, 0, sizeof(new_loan));
+    new_loan.id_peminjaman = next_loan_id(loans, *loan_count);
+    copy_string(new_loan.username, sizeof(new_loan.username),
+                current_user->username);
+    copy_string(new_loan.ocaid, sizeof(new_loan.ocaid), catalog[index].ocaid);
+    get_current_date_str(new_loan.tanggal_pinjam,
+                         sizeof(new_loan.tanggal_pinjam));
+    copy_string(new_loan.status, sizeof(new_loan.status), STATUS_BORROWED);
+
+    /* Ubah data di memori dulu, baru simpan ke berkas. */
+    catalog[index].stock--;
+    loans[*loan_count] = new_loan;
+    (*loan_count)++;
+
+    save_books(catalog, book_count);
+    save_loans(loans, *loan_count);
+
+    printf("[OK] Berhasil meminjam \"%s\".\n", catalog[index].title);
+    printf("     ID transaksi: %u | Tanggal pinjam: %s | Sisa stok: %d\n",
+           new_loan.id_peminjaman, new_loan.tanggal_pinjam,
+           (int)catalog[index].stock);
 }

@@ -83,6 +83,20 @@ static int parse_book_line(const char *line, Book *b, int is_operational_db) {
 }
 
 /* Menyimpan seluruh array buku ke dalam berkas operasional books_db.txt */
+/* Helper internal: Menulis kolom teks dengan tanda petik & escape "" */
+static void write_quoted_field(FILE *fp, const char *str) {
+    fputc('"', fp);
+    while (*str != '\0') {
+        if (*str == '"') {
+            fputc('"', fp);
+        }
+        fputc(*str, fp);
+        str++;
+    }
+    fputc('"', fp);
+}
+
+/* Menyimpan seluruh array buku ke dalam berkas operasional books_db.txt */
 int save_books_to_db(const Book catalog[], int book_count) {
     FILE *fp = fopen(DB_BOOK_FILE, "w");
     int i;
@@ -95,10 +109,11 @@ int save_books_to_db(const Book catalog[], int book_count) {
     fprintf(fp, "ocaid title author year page_count openlibrary_edition openlibrary_work full_text_url stock\n");
 
     for (i = 0; i < book_count; i++) {
-        fprintf(fp, "%s \"%s\" \"%s\" %d %d %s %s %s %d\n",
-                catalog[i].ocaid,
-                catalog[i].title,
-                catalog[i].author,
+        fprintf(fp, "%s ", catalog[i].ocaid);
+        write_quoted_field(fp, catalog[i].title);
+        fputc(' ', fp);
+        write_quoted_field(fp, catalog[i].author);
+        fprintf(fp, " %d %d %s %s %s %d\n",
                 catalog[i].year,
                 catalog[i].page_count,
                 catalog[i].openlibrary_edition,

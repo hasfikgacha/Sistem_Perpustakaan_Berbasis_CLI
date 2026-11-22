@@ -157,3 +157,47 @@ int init_and_load_books(Book catalog[], int max_capacity) {
     return count;
 }
 
+/* Membaca user.txt ( membuat akun default jika berkas belum ada ) */
+int load_users(User users[], int max_capacity) {
+    FILE *fp = fopen(DB_USER_FILE, "r");
+    int count = 0;
+
+    if (!fp) {
+        /* Buat akun default untuk pengujian jika user.txt belum ada */
+        strcpy(users[0].username, "admin");
+        strcpy(users[0].password, "admin123");
+        strcpy(users[0].role, "admin");
+
+        strcpy(users[1].username, "mahasiswa");
+        strcpy(users[1].password, "mhs123");
+        strcpy(users[1].role, "user");
+
+        count = 2;
+        save_users(users, count);
+        printf("[INFO] Berkas '%s' dibuat otomatis dengan 2 akun default.\n", DB_USER_FILE);
+        return count;
+    }
+
+    while (count < max_capacity &&
+           fscanf(fp, "%31s %31s %11s",
+                  users[count].username,
+                  users[count].password,
+                  users[count].role) == 3) {
+        count++;
+    }
+
+    fclose(fp);
+    return count;
+}
+
+int save_users(const User users[], int user_count) {
+    FILE *fp = fopen(DB_USER_FILE, "w");
+    int i;
+    if (!fp) return 0;
+
+    for (i = 0; i < user_count; i++) {
+        fprintf(fp, "%s %s %s\n", users[i].username, users[i].password, users[i].role);
+    }
+    fclose(fp);
+    return 1;
+}

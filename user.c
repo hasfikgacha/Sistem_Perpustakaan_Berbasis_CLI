@@ -43,6 +43,13 @@ extern void save_loans(const Loan loans[], int loan_count);
 #define W_STOCK 4
 #define BOOK_LINE_WIDTH (W_ID + W_TITLE + W_AUTHOR + W_YEAR + W_STOCK + 4 * 3)
 
+/* Lebar kolom tabel peminjaman. */
+#define W_LOAN_ID 6
+#define W_LOAN_DATE 12
+#define W_LOAN_STATUS 10
+#define LOAN_LINE_WIDTH \
+    (W_LOAN_ID + W_ID + W_TITLE + W_LOAN_DATE + W_LOAN_STATUS + 4 * 3)
+
 /* ---------- Helper: input ---------- */
 
 typedef enum { INPUT_OK, INPUT_INVALID, INPUT_EOF } InputStatus;
@@ -289,6 +296,33 @@ static unsigned int next_loan_id(const Loan loans[], int loan_count)
     return max_id + 1;
 }
 
+/* Membaca bilangan bulat dalam rentang [min, max]. */
+static InputStatus read_long(const char *prompt, long min, long max,
+                             long *value)
+{
+    char buffer[INPUT_SIZE];
+    char *end = NULL;
+    long parsed;
+
+    if (read_line(prompt, buffer, sizeof(buffer)) == INPUT_EOF) {
+        return INPUT_EOF;
+    }
+
+    if (buffer[0] == '\0') {
+        printf("[!] Input tidak boleh kosong.\n");
+        return INPUT_INVALID;
+    }
+
+    parsed = strtol(buffer, &end, 10);
+    if (*end != '\0' || parsed < min || parsed > max) {
+        printf("[!] Masukkan angka bulat antara %ld dan %ld.\n", min, max);
+        return INPUT_INVALID;
+    }
+
+    *value = parsed;
+    return INPUT_OK;
+}
+
 /* ---------- Fitur: katalog & pencarian ---------- */
 
 void user_view_available_books(const Book catalog[], int book_count)
@@ -453,4 +487,213 @@ void user_borrow_book(Book catalog[], int book_count, Loan loans[],
     printf("     ID transaksi: %u | Tanggal pinjam: %s | Sisa stok: %d\n",
            new_loan.id_peminjaman, new_loan.tanggal_pinjam,
            (int)catalog[index].stock);
+}
+
+/* ---------- Fitur: peminjaman pribadi ---------- */
+
+/*
+ * Menampilkan peminjaman milik current_user.
+ * only_active = 1 -> hanya yang berstatus DIPINJAM; 0 -> seluruh riwayat.
+ * Mengembalikan jumlah baris yang ditampilkan.
+ */
+int user_view_personal_loans(const Book catalog[], int book_count,
+                             const Loan loans[], int loan_count,
+                             const User *current_user, int only_active)
+{
+    const char *title;
+    int shown = 0;
+    int index;
+    int i;
+
+    if (current_user == NULL || loans == NULL) {
+        return 0;
+    }
+
+    putchar('\n');
+    print_line('=', LOAN_LINE_WIDTH);
+    print_centered(only_active ? "PEMINJAMAN AKTIF SAYA"
+                               : "RIWAYAT PEMINJAMAN SAYA",
+                   LOAN_LINE_WIDTH);
+    print_line('=', LOAN_LINE_WIDTH);
+
+    for (i = 0; i < loan_count; i++) {
+        if (strcmp(loans[i].username, current_user->username) != 0) {
+            continue;
+        }
+        if (only_active && !loan_is_borrowed(&loans[i])) {
+            continue;
+        }
+
+        if (shown == 0) {
+            printf("%-*s | %-*s | %-*s | %-*s | %-*s\n",
+                   W_LOAN_ID, "ID",
+                   W_ID, "ID Buku (OCAID)",
+                   W_TITLE, "Judul Buku",
+                   W_LOAN_DATE, "Tgl Pinjam",
+                   W_LOAN_STATUS, "Status");
+            print_line('-', LOAN_LINE_WIDTH);
+        }
+
+        index = (catalog != NULL)
+                    ? find_book_index(catalog, book_count, loans[i].ocaid)
+                    : -1;
+        title = (index >= 0) ? catalog[index].title : "(buku sudah dihapus)";
+
+        printf("%-*u | %-*.*s | %-*.*s | %-*.*s | %-*.*s\n",
+               W_LOAN_ID, loans[i].id_peminjaman,
+               W_ID, W_ID, loans[i].ocaid,
+               W_TITLE, W_TITLE, title,
+               W_LOAN_DATE, W_LOAN_DATE, loans[i].tanggal_pinjam,
+               W_LOAN_STATUS, W_LOAN_STATUS, loans[i].status);
+        shown++;
+    }
+
+    if (shown == 0) {
+        printf(only_active ? "Anda tidak sedang meminjam buku apa pun.\n"
+                           : "Anda belum pernah meminjam buku.\n");
+    } else {
+        printf("\nTotal %d transaksi.\n", shown);
+    }
+    print_line('=', LOAN_LINE_WIDTH);
+    return shown;
+}
+
+/* ---------- Fitur: pengembalian ---------- */
+
+void user_return_book(Book catalog[], int book_count, Loan loans[],
+                      int loan_count, const User *current_user)
+{
+    long loan_id = 0;
+    InputStatus status;
+    int loan_index = -1;
+    int book_index;
+    int i;
+
+    if (catalog == NULL || loans == NULL || current_user == NULL) {
+        printf("[!] Data internal tidak valid.\n");
+        return;
+    }
+
+    printf("\n--- KEMBALIKAN BUKU ---\n");
+
+    if (user_view_personal_loans(catalog, book_count, loans, loan_count,
+                                 current_user, 1) == 0) {
+        return;
+    }
+
+    status = read_long("Masukkan ID transaksi yang dikembalikan "
+                       "(0 untuk batal): ",
+                       0, 2147483647L, &loan_id);
+    if (status != INPUT_OK) {
+        return;
+    }
+    if (loan_id == 0) {
+        printf("Pengembalian dibatalkan.\n");
+        return;
+    }
+
+    for (i = 0; i < loan_count; i++) {
+        if (loans[i].id_peminjaman == (unsigned int)loan_id &&
+            strcmp(loans[i].username, current_user->username) == 0 &&
+            loan_is_borrowed(&loans[i])) {
+            loan_index = i;
+            break;
+        }
+    }
+    if (loan_index < 0) {
+        printf("[!] ID transaksi %ld tidak ditemukan di peminjaman aktif "
+               "Anda.\n",
+               loan_id);
+        return;
+    }
+
+    copy_string(loans[loan_index].status, sizeof(loans[loan_index].status),
+                STATUS_RETURNED);
+
+    book_index = find_book_index(catalog, book_count, loans[loan_index].ocaid);
+    if (book_index >= 0) {
+        catalog[book_index].stock++;
+    }
+
+    save_books(catalog, book_count);
+    save_loans(loans, loan_count);
+
+    if (book_index >= 0) {
+        printf("[OK] Buku \"%s\" berhasil dikembalikan. Stok sekarang: %d\n",
+               catalog[book_index].title, (int)catalog[book_index].stock);
+    } else {
+        printf("[OK] Buku dikembalikan. (Buku sudah tidak ada di katalog, "
+               "stok tidak diubah.)\n");
+    }
+}
+
+/* ---------- Menu User ---------- */
+
+static void print_user_menu(const User *current_user)
+{
+    printf("\n=====================================\n");
+    printf(" MENU ANGGOTA - %s\n", current_user->username);
+    printf("=====================================\n");
+    printf(" 1. Lihat katalog buku tersedia\n");
+    printf(" 2. Cari buku\n");
+    printf(" 3. Pinjam buku\n");
+    printf(" 4. Kembalikan buku\n");
+    printf(" 5. Peminjaman aktif saya\n");
+    printf(" 6. Riwayat peminjaman saya\n");
+    printf(" 0. Logout\n");
+    printf("-------------------------------------\n");
+}
+
+void run_user_session(const User *current_user, Book catalog[], int book_count,
+                      Loan loans[], int *loan_count, int loan_capacity)
+{
+    long choice = -1;
+    InputStatus status;
+
+    if (current_user == NULL || catalog == NULL || loans == NULL ||
+        loan_count == NULL) {
+        printf("[!] Sesi User tidak dapat dimulai: data tidak valid.\n");
+        return;
+    }
+
+    do {
+        print_user_menu(current_user);
+        status = read_long("Pilih menu [0-6]: ", 0, 6, &choice);
+
+        if (status == INPUT_EOF) {
+            break; /* input habis: keluar dengan aman */
+        }
+        if (status == INPUT_INVALID) {
+            continue;
+        }
+
+        switch (choice) {
+        case 1:
+            user_view_available_books(catalog, book_count);
+            break;
+        case 2:
+            user_search_books(catalog, book_count);
+            break;
+        case 3:
+            user_borrow_book(catalog, book_count, loans, loan_count,
+                             loan_capacity, current_user);
+            break;
+        case 4:
+            user_return_book(catalog, book_count, loans, *loan_count,
+                             current_user);
+            break;
+        case 5:
+            user_view_personal_loans(catalog, book_count, loans, *loan_count,
+                                     current_user, 1);
+            break;
+        case 6:
+            user_view_personal_loans(catalog, book_count, loans, *loan_count,
+                                     current_user, 0);
+            break;
+        default:
+            break;
+        }
+    } while (choice != 0);
+
+    printf("\nLogout berhasil. Sampai jumpa, %s!\n", current_user->username);
 }

@@ -221,19 +221,21 @@ void admin_update_book(Book catalog[], int book_count) {
 
 void admin_delete_book(Book catalog[], int *book_count, const Loan loans[], int loan_count) {
     char ocaid_hapus[MAX_ID_LEN];
-    printf("Masukkan ID buku yang ingin dihapus: ");
+
+    printf("\n--- HAPUS BUKU ---\n");
+    printf("Masukkan ID buku (OCAID) yang ingin dihapus: ");
     read_string(ocaid_hapus, MAX_ID_LEN);
 
     int idx = find_book_index_by_id(catalog, *book_count, ocaid_hapus);
     if (idx == -1) {
-        printf("Buku dengan ID tersebut tidak ditemukan.\n");
+        printf("[!] Buku dengan ID \"%s\" tidak ditemukan.\n", ocaid_hapus);
         return;
     }
 
     for (int i = 0; i < loan_count; i++) {
         if (strcmp(loans[i].ocaid, ocaid_hapus) == 0 &&
             strcmp(loans[i].status, "DIPINJAM") == 0) {
-            printf("Buku sedang dipinjam, tidak bisa dihapus.\n");
+            printf("[!] Buku sedang dipinjam, tidak bisa dihapus.\n");
             return;
         }
     }
@@ -252,8 +254,9 @@ void admin_delete_book(Book catalog[], int *book_count, const Loan loans[], int 
     (*book_count)--;
 
     save_books_to_db(catalog, *book_count);
-    printf("Buku berhasil dihapus.\n");
+    printf("[OK] Buku berhasil dihapus.\n");
 }
+
 
 void admin_view_all_loans(const Loan loans[], int loan_count, const Book catalog[], int book_count) {
     if (loan_count == 0) {

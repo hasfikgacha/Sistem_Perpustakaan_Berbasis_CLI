@@ -259,14 +259,24 @@ void admin_delete_book(Book catalog[], int *book_count, const Loan loans[], int 
 
 
 void admin_view_all_loans(const Loan loans[], int loan_count, const Book catalog[], int book_count) {
+    putchar('\n');
+    print_line('=', ADMIN_LOAN_WIDTH);
+    print_centered("RIWAYAT SELURUH PEMINJAMAN", ADMIN_LOAN_WIDTH);
+    print_line('=', ADMIN_LOAN_WIDTH);
+
     if (loan_count == 0) {
         printf("Belum ada riwayat peminjaman.\n");
+        print_line('=', ADMIN_LOAN_WIDTH);
         return;
     }
 
-    printf("\n%-5s %-15s %-40s %-12s %-10s\n",
-           "ID", "Peminjam", "Judul Buku", "Tanggal", "Status");
-    printf("--------------------------------------------------------------------------------------\n");
+    printf("%-*s | %-*s | %-*s | %-*s | %-*s\n",
+           W_LOAN_ID, "ID",
+           W_USERNAME, "Peminjam",
+           W_TITLE, "Judul Buku",
+           W_LOAN_DATE, "Tgl Pinjam",
+           W_LOAN_STATUS, "Status");
+    print_line('-', ADMIN_LOAN_WIDTH);
 
     for (int i = 0; i < loan_count; i++) {
         const char *judul = "(buku sudah dihapus)";
@@ -275,10 +285,30 @@ void admin_view_all_loans(const Loan loans[], int loan_count, const Book catalog
             judul = catalog[idx].title;
         }
 
-        printf("%-5u %-15s %-40.40s %-12s %-10s\n",
-               loans[i].id_peminjaman, loans[i].username, judul,
-               loans[i].tanggal_pinjam, loans[i].status);
+        printf("%-*u | %-*.*s | %-*.*s | %-*.*s | %-*.*s\n",
+               W_LOAN_ID, loans[i].id_peminjaman,
+               W_USERNAME, W_USERNAME, loans[i].username,
+               W_TITLE, W_TITLE, judul,
+               W_LOAN_DATE, W_LOAN_DATE, loans[i].tanggal_pinjam,
+               W_LOAN_STATUS, W_LOAN_STATUS, loans[i].status);
     }
+
+    printf("\nTotal %d transaksi.\n", loan_count);
+    print_line('=', ADMIN_LOAN_WIDTH);
+}
+
+static void print_admin_menu(void) {
+    putchar('\n');
+    print_line('=', MENU_WIDTH);
+    print_centered("MENU ADMIN PERPUSTAKAAN", MENU_WIDTH);
+    print_line('=', MENU_WIDTH);
+    printf(" 1. Lihat & urutkan katalog buku\n");
+    printf(" 2. Tambah buku\n");
+    printf(" 3. Ubah data buku\n");
+    printf(" 4. Hapus buku\n");
+    printf(" 5. Lihat riwayat peminjaman\n");
+    printf(" 0. Logout\n");
+    print_line('-', MENU_WIDTH);
 }
 
 void run_admin_session(Book catalog[], int *book_count, int max_capacity, Loan loans[], int loan_count) {

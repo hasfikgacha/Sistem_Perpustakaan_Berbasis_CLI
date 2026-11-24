@@ -3,7 +3,7 @@
  * Modul Sirkulasi Anggota (User) - Sistem Manajemen Perpustakaan CLI.
  *
  * Tanggung jawab modul ini:
- *   - menampilkan katalog buku yang tersedia untuk dipinjam,
+ *   - menampilkan katalog buku yang tersedia (langsung atau dengan sorting),
  *   - mencari buku berdasarkan ID (ocaid), judul, atau pengarang,
  *   - meminjam dan mengembalikan buku,
  *   - menampilkan daftar peminjaman pribadi,
@@ -22,6 +22,7 @@
 
 #include "models.h"
 #include "file_io.h"
+#include "sort.h"
 #include "utils.h"
 #include "user.h"
 
@@ -202,8 +203,7 @@ static void copy_string(char *dst, size_t size, const char *src)
     if (size == 0) {
         return;
     }
-    strncpy(dst, src, size - 1);
-    dst[size - 1] = '\0';
+    snprintf(dst, size, "%s", src);
 }
 
 /* Mengisi 'buffer' dengan tanggal hari ini berformat DD-MM-YYYY. */
@@ -331,6 +331,62 @@ void user_view_available_books(const Book catalog[], int book_count)
         printf("\nTotal %d buku tersedia.\n", found);
     }
     print_line('=', BOOK_LINE_WIDTH);
+}
+
+static void user_catalog_menu(Book catalog[], int book_count)
+{
+    long sub_choice = -1;
+    InputStatus status;
+
+    printf("\n--- LIHAT KATALOG BUKU ---\n");
+    printf(" 1. Lihat langsung (tanpa sorting)\n");
+    printf(" 2. Urutkan & lihat katalog (sorting)\n");
+    printf(" 0. Kembali\n");
+    print_line('-', MENU_WIDTH);
+
+    do {
+        status = read_long("Pilih opsi [0-2]: ", 0, 2, &sub_choice);
+    } while (status == INPUT_INVALID);
+
+    if (status == INPUT_EOF || sub_choice == 0) {
+        return;
+    }
+
+    if (sub_choice == 1) {
+        user_view_available_books(catalog, book_count);
+        press_enter_to_continue();
+        return;
+    }
+
+    /* Opsi 2: filter buku yang tersedia (stock > 0) lalu masuk menu sorting */
+    if (catalog == NULL || book_count <= 0) {
+        printf("[!] Katalog buku kosong.\n");
+        press_enter_to_continue();
+        return;
+    }
+
+    Book *available = (Book *)malloc((size_t)book_count * sizeof(Book));
+    if (available == NULL) {
+        interactive_sort_and_view_catalog(catalog, book_count);
+        return;
+    }
+
+    int avail_count = 0;
+    for (int i = 0; i < book_count; i++) {
+        if (catalog[i].stock > 0) {
+            available[avail_count++] = catalog[i];
+        }
+    }
+
+    if (avail_count == 0) {
+        printf("[!] Saat ini tidak ada buku yang tersedia untuk dipinjam.\n");
+        free(available);
+        press_enter_to_continue();
+        return;
+    }
+
+    interactive_sort_and_view_catalog(available, avail_count);
+    free(available);
 }
 
 void user_search_books(const Book catalog[], int book_count)
@@ -644,8 +700,7 @@ void run_user_session(const User *current_user, Book catalog[], int book_count,
 
         switch (choice) {
         case 1:
-            user_view_available_books(catalog, book_count);
-            press_enter_to_continue();
+            user_catalog_menu(catalog, book_count);
             break;
         case 2:
             user_search_books(catalog, book_count);

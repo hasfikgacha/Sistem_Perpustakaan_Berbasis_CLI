@@ -1,9 +1,10 @@
 # Hasil kompilasi
 *.o
 *main.exe
-perpustakaan
+perpustakaan.exe
 
 # File database operasional (hasil runtime)
+Books.txt
 books_db.txt
 user.txt
 peminjaman.txt

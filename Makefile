@@ -39,7 +39,7 @@ utils.o:   utils.c utils.h
 auth.o:    auth.c auth.h file_io.h utils.h models.h
 sort.o:    sort.c sort.h utils.h models.h
 admin.o:   admin.c admin.h file_io.h sort.h utils.h models.h
-user.o:    user.c user.h file_io.h utils.h models.h
+user.o:    user.c user.h file_io.h sort.h utils.h models.h
 
 # Jalankan program
 run: $(TARGET)

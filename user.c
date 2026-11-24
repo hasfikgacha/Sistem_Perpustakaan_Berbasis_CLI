@@ -36,7 +36,7 @@
 #define STATUS_RETURNED "KEMBALI"
 
 /* Lebar kolom tabel buku: satu-satunya sumber kebenaran format tabel. */
-#define W_ID 18
+#define W_ID 28
 #define W_TITLE 32
 #define W_AUTHOR 20
 #define W_YEAR 4
@@ -169,8 +169,8 @@ static void print_book_header(void)
 
 static void print_book_row(const Book *b)
 {
-    printf("%-*.*s | %-*.*s | %-*.*s | %-*d | %-*d\n",
-           W_ID, W_ID, b->ocaid,
+    printf("%-*s | %-*.*s | %-*.*s | %-*d | %-*d\n",
+           W_ID, b->ocaid,
            W_TITLE, W_TITLE, b->title,
            W_AUTHOR, W_AUTHOR, b->author,
            W_YEAR, (int)b->year,

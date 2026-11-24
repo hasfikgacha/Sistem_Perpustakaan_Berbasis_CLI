@@ -51,7 +51,7 @@ int read_int_range(int min, int max)
 
 void press_enter_to_continue(void)
 {
-    printf("Tekan Enter untuk melanjutkan...");
+    printf("\nTekan Enter untuk melanjutkan...");
     clear_input_buffer();
 }
 
@@ -62,4 +62,22 @@ void clear_screen(void)
 #else
     system("clear");
 #endif
+}
+
+void print_line(char ch, int width)
+{
+    int i;
+    for (i = 0; i < width; i++) {
+        putchar(ch);
+    }
+    putchar('\n');
+}
+
+void print_centered(const char *text, int width)
+{
+    int pad = (width - (int)strlen(text)) / 2;
+    if (pad < 0) {
+        pad = 0;
+    }
+    printf("%*s%s\n", pad, "", text);
 }

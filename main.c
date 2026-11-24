@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     while (1) {
         /* Cek == 1 secara eksplisit agar return -1 tidak melewati login */
         if (cla_logged_in != 1) {
-            if (!interactive_auth_menu(users, user_count, &current_user)) {
+            if (!interactive_auth_menu(users, &user_count, MAX_USERS, &current_user)) {
                 printf("\nTerima kasih telah menggunakan Sistem Manajemen Perpustakaan!\n");
                 break;
             }

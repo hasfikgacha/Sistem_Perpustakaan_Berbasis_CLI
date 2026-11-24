@@ -13,7 +13,12 @@ int verify_credentials(const User users[], int user_count,
 int login_via_cla(int argc, char *argv[], const User users[],
                   int user_count, User *out_user);
 
+/* Mendaftarkan akun baru dengan role "user" dan menyimpannya ke user.txt.
+   Return: 1 jika berhasil, 0 jika gagal/dibatalkan */
+int register_student(User users[], int *user_count, int max_users);
+
 /* Return 1 jika login berhasil, 0 jika pengguna keluar */
-int interactive_auth_menu(const User users[], int user_count, User *out_user);
+int interactive_auth_menu(User users[], int *user_count,
+                          int max_users, User *out_user);
 
 #endif

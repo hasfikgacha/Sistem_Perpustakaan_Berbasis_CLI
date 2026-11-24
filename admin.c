@@ -7,6 +7,17 @@
 #include "sort.h"
 #include "utils.h"
 
+#define MENU_WIDTH 40
+
+/* Lebar kolom tabel riwayat peminjaman (selaras dengan user.c) */
+#define W_LOAN_ID     6
+#define W_USERNAME    16
+#define W_TITLE       34
+#define W_LOAN_DATE   12
+#define W_LOAN_STATUS 10
+#define ADMIN_LOAN_WIDTH \
+    (W_LOAN_ID + W_USERNAME + W_TITLE + W_LOAN_DATE + W_LOAN_STATUS + 4 * 3)
+
 int find_book_index_by_id(const Book catalog[], int book_count, const char *ocaid) {
     for (int i = 0; i < book_count; i++) {
         if (strcmp(catalog[i].ocaid, ocaid) == 0) {

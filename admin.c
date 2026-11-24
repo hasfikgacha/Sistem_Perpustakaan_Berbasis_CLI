@@ -127,23 +127,27 @@ void admin_create_book(Book catalog[], int *book_count, int max_capacity) {
 
 void admin_update_book(Book catalog[], int book_count) {
     char ocaid_cari[MAX_ID_LEN];
-    printf("Masukkan ID buku yang ingin diubah: ");
+
+    printf("\n--- UBAH DATA BUKU ---\n");
+    printf("Masukkan ID buku (OCAID) yang ingin diubah: ");
     read_string(ocaid_cari, MAX_ID_LEN);
 
     int idx = find_book_index_by_id(catalog, book_count, ocaid_cari);
     if (idx == -1) {
-        printf("Buku dengan ID tersebut tidak ditemukan.\n");
+        printf("[!] Buku dengan ID \"%s\" tidak ditemukan.\n", ocaid_cari);
         return;
     }
 
-    printf("\nBuku: %s\n", catalog[idx].title);
-    printf("1. Ubah judul\n");
-    printf("2. Ubah pengarang\n");
-    printf("3. Ubah tahun terbit\n");
-    printf("4. Ubah jumlah halaman\n");
-    printf("5. Tambah/kurangi stok\n");
-    printf("0. Batal\n");
-    printf("Pilihan: ");
+    printf("\nBuku terpilih: %s\n", catalog[idx].title);
+    print_line('-', MENU_WIDTH);
+    printf(" 1. Ubah judul\n");
+    printf(" 2. Ubah pengarang\n");
+    printf(" 3. Ubah tahun terbit\n");
+    printf(" 4. Ubah jumlah halaman\n");
+    printf(" 5. Tambah/kurangi stok (Saat ini: %d)\n", catalog[idx].stock);
+    printf(" 0. Batal\n");
+    print_line('-', MENU_WIDTH);
+    printf("Pilih field [0-5]: ");
     int pilihan = read_int_range(0, 5);
 
     switch (pilihan) {
@@ -152,7 +156,7 @@ void admin_update_book(Book catalog[], int book_count) {
             printf("Judul baru: ");
             read_string(judul_baru, MAX_TITLE_LEN);
             if (strlen(judul_baru) == 0) {
-                printf("Judul tidak boleh kosong.\n");
+                printf("[!] Judul tidak boleh kosong.\n");
                 return;
             }
             strcpy(catalog[idx].title, judul_baru);
@@ -163,7 +167,7 @@ void admin_update_book(Book catalog[], int book_count) {
             printf("Pengarang baru: ");
             read_string(pengarang_baru, MAX_AUTHOR_LEN);
             if (strlen(pengarang_baru) == 0) {
-                printf("Pengarang tidak boleh kosong.\n");
+                printf("[!] Pengarang tidak boleh kosong.\n");
                 return;
             }
             strcpy(catalog[idx].author, pengarang_baru);
@@ -171,9 +175,9 @@ void admin_update_book(Book catalog[], int book_count) {
         }
         case 3: {
             int tahun_baru;
-            printf("Tahun baru: ");
+            printf("Tahun terbit baru: ");
             if (!read_int_strict(&tahun_baru) || tahun_baru <= 0) {
-                printf("Tahun tidak valid.\n");
+                printf("[!] Tahun tidak valid.\n");
                 return;
             }
             catalog[idx].year = tahun_baru;
@@ -183,7 +187,7 @@ void admin_update_book(Book catalog[], int book_count) {
             int halaman_baru;
             printf("Jumlah halaman baru: ");
             if (!read_int_strict(&halaman_baru) || halaman_baru <= 0) {
-                printf("Jumlah halaman tidak valid.\n");
+                printf("[!] Jumlah halaman tidak valid.\n");
                 return;
             }
             catalog[idx].page_count = halaman_baru;
@@ -193,11 +197,11 @@ void admin_update_book(Book catalog[], int book_count) {
             int perubahan;
             printf("Perubahan stok (positif menambah, negatif mengurangi): ");
             if (!read_int_strict(&perubahan)) {
-                printf("Input stok harus berupa angka.\n");
+                printf("[!] Input stok harus berupa angka.\n");
                 return;
             }
             if (catalog[idx].stock + perubahan < 0) {
-                printf("Stok tidak boleh kurang dari 0.\n");
+                printf("[!] Stok tidak boleh kurang dari 0.\n");
                 return;
             }
             catalog[idx].stock += perubahan;
@@ -207,12 +211,12 @@ void admin_update_book(Book catalog[], int book_count) {
             printf("Perubahan dibatalkan.\n");
             return;
         default:
-            printf("Pilihan tidak valid.\n");
+            printf("[!] Pilihan tidak valid.\n");
             return;
     }
 
     save_books_to_db(catalog, book_count);
-    printf("Data buku berhasil diperbarui.\n");
+    printf("[OK] Data buku berhasil diperbarui.\n");
 }
 
 void admin_delete_book(Book catalog[], int *book_count, const Loan loans[], int loan_count) {

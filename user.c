@@ -10,7 +10,7 @@
  *   - menjalankan menu interaktif khusus User.
  *
  * Data disimpan dalam array of struct milik main.c. Modul ini hanya
- * membaca/mengubah array tersebut, lalu memanggil save_books() dan
+ * membaca/mengubah array tersebut, lalu memanggil save_books_to_db() dan
  * save_loans() (file_io.c) agar berkas .txt langsung tersinkronisasi.
  */
 
@@ -19,15 +19,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "file_io.h"
-#include "models.h"
-#include "user.h"
 
+#include "models.h"
+#include "file_io.h"
+#include "utils.h"
+#include "user.h"
 
 /* ---------- Konstanta ---------- */
 
 #define INPUT_SIZE 150 /* ukuran buffer untuk membaca satu baris input */
 #define PAGE_SIZE 20   /* jumlah baris per halaman saat menampilkan tabel */
+#define MENU_WIDTH 40  /* lebar bingkai menu utama (selaras dengan admin.c) */
 
 #define STATUS_BORROWED "DIPINJAM"
 #define STATUS_RETURNED "KEMBALI"
@@ -50,15 +52,6 @@
 /* ---------- Helper: input ---------- */
 
 typedef enum { INPUT_OK, INPUT_INVALID, INPUT_EOF } InputStatus;
-
-/* Membuang sisa karakter di stdin sampai akhir baris. */
-static void clear_input_buffer(void)
-{
-    int c;
-
-    while ((c = getchar()) != '\n' && c != EOF) {
-    }
-}
 
 /* Menghapus spasi di awal dan akhir string (in-place). */
 static void trim(char *s)
@@ -161,26 +154,6 @@ static int equals_ci(const char *a, const char *b)
 }
 
 /* ---------- Helper: tampilan ---------- */
-
-static void print_line(char ch, int width)
-{
-    int i;
-
-    for (i = 0; i < width; i++) {
-        putchar(ch);
-    }
-    putchar('\n');
-}
-
-static void print_centered(const char *text, int width)
-{
-    int pad = (width - (int)strlen(text)) / 2;
-
-    if (pad < 0) {
-        pad = 0;
-    }
-    printf("%*s%s\n", pad, "", text);
-}
 
 static void print_book_header(void)
 {
@@ -628,9 +601,13 @@ void user_return_book(Book catalog[], int book_count, Loan loans[],
 
 static void print_user_menu(const User *current_user)
 {
-    printf("\n=====================================\n");
-    printf(" MENU ANGGOTA - %s\n", current_user->username);
-    printf("=====================================\n");
+    char header[64];
+    snprintf(header, sizeof(header), "MENU ANGGOTA - %s", current_user->username);
+
+    putchar('\n');
+    print_line('=', MENU_WIDTH);
+    print_centered(header, MENU_WIDTH);
+    print_line('=', MENU_WIDTH);
     printf(" 1. Lihat katalog buku tersedia\n");
     printf(" 2. Cari buku\n");
     printf(" 3. Pinjam buku\n");
@@ -638,7 +615,7 @@ static void print_user_menu(const User *current_user)
     printf(" 5. Peminjaman aktif saya\n");
     printf(" 6. Riwayat peminjaman saya\n");
     printf(" 0. Logout\n");
-    printf("-------------------------------------\n");
+    print_line('-', MENU_WIDTH);
 }
 
 void run_user_session(const User *current_user, Book catalog[], int book_count,
@@ -654,43 +631,53 @@ void run_user_session(const User *current_user, Book catalog[], int book_count,
     }
 
     do {
+        clear_screen();
         print_user_menu(current_user);
-        status = read_long("Pilih menu [0-6]: ", 0, 6, &choice);
+
+        do {
+            status = read_long("Pilih menu [0-6]: ", 0, 6, &choice);
+        } while (status == INPUT_INVALID);
 
         if (status == INPUT_EOF) {
             break; /* input habis: keluar dengan aman */
-        }
-        if (status == INPUT_INVALID) {
-            continue;
         }
 
         switch (choice) {
         case 1:
             user_view_available_books(catalog, book_count);
+            press_enter_to_continue();
             break;
         case 2:
             user_search_books(catalog, book_count);
+            press_enter_to_continue();
             break;
         case 3:
             user_borrow_book(catalog, book_count, loans, loan_count,
                              loan_capacity, current_user);
+            press_enter_to_continue();
             break;
         case 4:
             user_return_book(catalog, book_count, loans, *loan_count,
                              current_user);
+            press_enter_to_continue();
             break;
         case 5:
             user_view_personal_loans(catalog, book_count, loans, *loan_count,
                                      current_user, 1);
+            press_enter_to_continue();
             break;
         case 6:
             user_view_personal_loans(catalog, book_count, loans, *loan_count,
                                      current_user, 0);
+            press_enter_to_continue();
+            break;
+        case 0:
+            printf("\n[OK] Logout berhasil. Sampai jumpa, %s!\n",
+                   current_user->username);
+            press_enter_to_continue();
             break;
         default:
             break;
         }
     } while (choice != 0);
-
-    printf("\nLogout berhasil. Sampai jumpa, %s!\n", current_user->username);
 }

@@ -11,7 +11,7 @@ Program mengelola katalog buku, akun pengguna, serta sirkulasi peminjaman dan pe
 | No | Nama | NIM | Pembagian Modul & Tugas |
 | :-: | :--- | :--- | :--- |
 | 1 | **Hasanul Fikri** | `260810701100013` | Struktur data (`models.h`), File I/O (`file_io.c/.h`), Integrasi (`main.c`), `Makefile`, & Pengujian |
-| 2 | **Kayla Zuhra** | `260810701100033` | Modul Admin (`admin.c/.h`) — CRUD katalog buku & riwayat peminjaman |
+| 2 | **Kaila Zuhra** | `260810701100033` | Modul Admin (`admin.c/.h`) — CRUD katalog buku & riwayat peminjaman |
 | 3 | **Khalisah** | `260810701100021` | Modul Autentikasi (`auth.c/.h`), Algoritma Sorting (`sort.c/.h`), & Utilitas (`utils.c/.h`) |
 | 4 | **Rajwa Ken Venona** | `260810701100028` | Modul Anggota/User (`user.c/.h`) — Sirkulasi peminjaman, pengembalian, & pencarian buku |
 

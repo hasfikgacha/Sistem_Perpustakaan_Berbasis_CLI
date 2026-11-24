@@ -56,22 +56,24 @@ static int read_int_strict(int *out_value) {
 }
 
 void admin_create_book(Book catalog[], int *book_count, int max_capacity) {
+    printf("\n--- TAMBAH BUKU BARU ---\n");
+
     if (*book_count >= max_capacity) {
-        printf("Katalog penuh, tidak bisa menambah buku.\n");
+        printf("[!] Katalog penuh, tidak bisa menambah buku.\n");
         return;
     }
 
     char ocaid_baru[MAX_ID_LEN];
-    printf("Masukkan ID buku (ocaid, tanpa spasi): ");
+    printf("Masukkan ID buku (OCAID, tanpa spasi): ");
     read_string(ocaid_baru, MAX_ID_LEN);
 
     if (strlen(ocaid_baru) == 0 || has_whitespace(ocaid_baru)) {
-        printf("ID tidak boleh kosong atau mengandung spasi.\n");
+        printf("[!] ID tidak boleh kosong atau mengandung spasi.\n");
         return;
     }
 
     if (find_book_index_by_id(catalog, *book_count, ocaid_baru) != -1) {
-        printf("ID sudah dipakai, buku tidak ditambahkan.\n");
+        printf("[!] ID \"%s\" sudah dipakai, buku tidak ditambahkan.\n", ocaid_baru);
         return;
     }
 
@@ -80,35 +82,35 @@ void admin_create_book(Book catalog[], int *book_count, int max_capacity) {
     memset(&temp, 0, sizeof(temp));
     strcpy(temp.ocaid, ocaid_baru);
 
-    printf("Judul buku: ");
+    printf("Judul buku     : ");
     read_string(temp.title, MAX_TITLE_LEN);
     if (strlen(temp.title) == 0) {
-        printf("Judul tidak boleh kosong.\n");
+        printf("[!] Judul tidak boleh kosong.\n");
         return;
     }
 
-    printf("Pengarang: ");
+    printf("Pengarang      : ");
     read_string(temp.author, MAX_AUTHOR_LEN);
     if (strlen(temp.author) == 0) {
-        printf("Pengarang tidak boleh kosong.\n");
+        printf("[!] Pengarang tidak boleh kosong.\n");
         return;
     }
 
-    printf("Tahun terbit: ");
+    printf("Tahun terbit   : ");
     if (!read_int_strict(&temp.year) || temp.year <= 0) {
-        printf("Tahun terbit tidak valid.\n");
+        printf("[!] Tahun terbit tidak valid.\n");
         return;
     }
 
-    printf("Jumlah halaman: ");
+    printf("Jumlah halaman : ");
     if (!read_int_strict(&temp.page_count) || temp.page_count <= 0) {
-        printf("Jumlah halaman tidak valid.\n");
+        printf("[!] Jumlah halaman tidak valid.\n");
         return;
     }
 
-    printf("Stok awal: ");
+    printf("Stok awal      : ");
     if (!read_int_strict(&temp.stock) || temp.stock < 0) {
-        printf("Stok awal tidak valid.\n");
+        printf("[!] Stok awal tidak valid.\n");
         return;
     }
 
@@ -120,7 +122,7 @@ void admin_create_book(Book catalog[], int *book_count, int max_capacity) {
     (*book_count)++;
 
     save_books_to_db(catalog, *book_count);
-    printf("Buku berhasil ditambahkan.\n");
+    printf("[OK] Buku \"%s\" berhasil ditambahkan.\n", temp.title);
 }
 
 void admin_update_book(Book catalog[], int book_count) {

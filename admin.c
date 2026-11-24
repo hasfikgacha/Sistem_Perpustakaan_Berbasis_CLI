@@ -312,18 +312,13 @@ static void print_admin_menu(void) {
 }
 
 void run_admin_session(Book catalog[], int *book_count, int max_capacity, Loan loans[], int loan_count) {
-    int pilihan = 0;
+    int pilihan = -1;
 
-    while (pilihan != 6) {
-        printf("\n===== MENU ADMIN =====\n");
-        printf("1. Lihat & urutkan katalog buku\n");
-        printf("2. Tambah buku\n");
-        printf("3. Ubah data buku\n");
-        printf("4. Hapus buku\n");
-        printf("5. Lihat riwayat peminjaman\n");
-        printf("6. Keluar\n");
-        printf("Pilihan: ");
-        pilihan = read_int_range(1, 6);
+    do {
+        clear_screen();
+        print_admin_menu();
+        printf("Pilih menu [0-5]: ");
+        pilihan = read_int_range(0, 5);
 
         switch (pilihan) {
             case 1:
@@ -331,21 +326,26 @@ void run_admin_session(Book catalog[], int *book_count, int max_capacity, Loan l
                 break;
             case 2:
                 admin_create_book(catalog, book_count, max_capacity);
+                press_enter_to_continue();
                 break;
             case 3:
                 admin_update_book(catalog, *book_count);
+                press_enter_to_continue();
                 break;
             case 4:
                 admin_delete_book(catalog, book_count, loans, loan_count);
+                press_enter_to_continue();
                 break;
             case 5:
                 admin_view_all_loans(loans, loan_count, catalog, *book_count);
+                press_enter_to_continue();
                 break;
-            case 6:
-                printf("Keluar dari menu admin.\n");
+            case 0:
+                printf("\n[OK] Logout berhasil. Sampai jumpa, Admin!\n");
+                press_enter_to_continue();
                 break;
             default:
-                printf("Pilihan tidak valid.\n");
+                break;
         }
-    }
+    } while (pilihan != 0);
 }
